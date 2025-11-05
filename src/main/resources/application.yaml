@@ -1,0 +1,18 @@
+server:
+  port: 5007
+  servlet:
+    context-path: /relationship
+
+spring:
+  application:
+    name: relationship-service
+  neo4j:
+    uri: bolt://localhost:9005
+    authentication:
+      database: clone_fb_db
+      username: neo4j
+      password: test
+
+app:
+  services:
+    file: http://localhost:5005

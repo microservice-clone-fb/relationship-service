@@ -1,11 +1,12 @@
 package com.tam.relationship.entity;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
-import jakarta.persistence.Lob;
 import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.PrePersist;
+
+import org.springframework.data.neo4j.core.schema.Property;
 
 import com.tam.relationship.utils.AuditListener;
 
@@ -19,31 +20,28 @@ import lombok.Setter;
 @EntityListeners(AuditListener.class)
 public abstract class AuditableBaseEntity {
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private Instant createdAt;
+    @Property("createdAt")
+    private LocalDateTime createdAt;
 
-    @Column(name = "last_updated_at")
-    private Instant lastUpdatedAt;
+    @Property("updatedAt")
+    private LocalDateTime updatedAt;
 
-    @Column(name = "created_by", updatable = false)
+    @Property("createdBy")
     private String createdBy;
 
-    @Column(name = "last_updated_by")
-    private String lastUpdatedBy;
+    @Property("updatedBy")
+    private String updatedBy;
 
-    @Column(name = "is_active")
-    private boolean isActive = true;
+    @Property("isActive")
+    private Boolean isActive = true;
 
-    @Lob
-    @Column(name = "history", columnDefinition = "TEXT")
-    private String history;
-
-    // Helper method để thêm history entry
-    public void addHistoryEntry(String entry) {
-        if (this.history == null) {
-            this.history = entry;
-        } else {
-            this.history = this.history + "\n" + entry;
+    @PostLoad
+    @PrePersist
+    public void setTimestamps() {
+        LocalDateTime now = LocalDateTime.now();
+        if (this.createdAt == null) {
+            this.createdAt = now;
         }
+        this.updatedAt = now;
     }
 }

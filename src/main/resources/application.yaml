@@ -7,12 +7,17 @@ spring:
   application:
     name: relationship-service
   neo4j:
-    uri: bolt://localhost:9005
+    uri: bolt://localhost:7867
     authentication:
       database: clone_fb_db
       username: neo4j
-      password: test
+      password: 12345678
 
 app:
   services:
     file: http://localhost:5005
+
+logging:
+  level:
+    root: INFO
+    "[com.tam.relationship]": INFO

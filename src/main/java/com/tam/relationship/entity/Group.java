@@ -1,25 +1,32 @@
 package com.tam.relationship.entity;
 
-import org.springframework.data.neo4j.core.schema.*;
-import org.springframework.data.neo4j.core.support.UUIDStringGenerator;
+import java.util.HashSet;
+import java.util.Set;
+
+import jakarta.persistence.*;
 
 import lombok.*;
-import lombok.experimental.FieldDefaults;
 
-/**
- * Đại diện cho Group/Nhóm trong hệ thống Neo4j
- * Node này lưu trữ thông tin về nhóm trên Facebook
- */
+@Entity
+@Table(name = "groups")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
-@Node("Group")
-public class Group {
-
+public class Group extends BaseEntity {
     @Id
-    @GeneratedValue(generatorClass = UUIDStringGenerator.class)
-    String id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
+
+    // @Column(name = "group_id", nullable = false)
+    // private String groupId;
+
+    @ManyToMany
+    @JoinTable(
+            name = "user_group_join",
+            joinColumns = @JoinColumn(name = "group_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id"))
+    @Builder.Default
+    private Set<User> members = new HashSet<>();
 }

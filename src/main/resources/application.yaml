@@ -1,23 +1,44 @@
 server:
-  port: 5007
+  port: ${SERVER_PORT:5007}
   servlet:
-    context-path: /relationship
+    context-path: ${CONTEXT_PATH:/relationship}
 
 spring:
   application:
-    name: relationship-service
-  neo4j:
-    uri: bolt://localhost:7867
-    authentication:
-      database: clone_fb_db
-      username: neo4j
-      password: 12345678
+    name: ${APP_NAME:relationship-service}
+
+  main:
+    allow-bean-definition-overriding: true
+
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/clone_fb_relationship}
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:123456}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: ${HIBERNATE_DDL_AUTO:update}
+    show-sql: ${SHOW_SQL:true}
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        use_sql_comments: true
+    open-in-view: false
+
+  data:
+    jpa:
+      repositories:
+        enabled: true
 
 app:
   services:
-    file: http://localhost:5005
+    file: ${FILE_SERVICE_URL:http://localhost:5005}
 
 logging:
   level:
-    root: INFO
-    "[com.tam.relationship]": INFO
+    root: ${LOGGING_LEVEL:INFO}
+    "[com.tam.relationship]": DEBUG
+    "[org.hibernate.SQL]": DEBUG
+    "[org.hibernate.type.descriptor.sql.BasicBinder]": TRACE

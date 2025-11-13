@@ -1,28 +1,32 @@
 package com.tam.relationship.entity;
 
-import org.springframework.data.neo4j.core.schema.*;
-import org.springframework.data.neo4j.core.support.UUIDStringGenerator;
+import java.util.HashSet;
+import java.util.Set;
+
+import jakarta.persistence.*;
 
 import lombok.*;
-import lombok.experimental.FieldDefaults;
 
-/**
- * Đại diện cho Page/Fan Page trong hệ thống Neo4j
- * Node này lưu trữ thông tin về trang trên Facebook
- */
+@Entity
+@Table(name = "pages")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
-@Node("Page")
-public class Page {
-
+public class Page extends BaseEntity {
     @Id
-    @GeneratedValue(generatorClass = UUIDStringGenerator.class)
-    String id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
 
-    // pageInfo lấy từ profile-service bằng id ở đây
+    // @Column(name = "page_id", nullable = false)
+    // private String pageId;
 
+    @ManyToMany
+    @JoinTable(
+            name = "user_page_join",
+            joinColumns = @JoinColumn(name = "page_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id"))
+    @Builder.Default
+    private Set<User> followers = new HashSet<>();
 }

@@ -1,26 +1,32 @@
 package com.tam.relationship.entity;
 
-import org.springframework.data.neo4j.core.schema.*;
-import org.springframework.data.neo4j.core.support.UUIDStringGenerator;
+import java.util.HashSet;
+import java.util.Set;
+
+import jakarta.persistence.*;
 
 import lombok.*;
-import lombok.experimental.FieldDefaults;
 
-/**
- * Đại diện cho Địa điểm trong hệ thống Neo4j
- * Node này lưu trữ thông tin về địa điểm (thành phố, quốc gia, trường học, công
- * ty, v.v.)
- */
+@Entity
+@Table(name = "locations")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
-@Node("Location")
-public class Location {
-
+public class Location extends BaseEntity {
     @Id
-    @GeneratedValue(generatorClass = UUIDStringGenerator.class)
-    String id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
+
+    // @Column(name = "location_id", nullable = false)
+    // private String locationId;
+
+    @ManyToMany
+    @JoinTable(
+            name = "user_location_join",
+            joinColumns = @JoinColumn(name = "location_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id"))
+    @Builder.Default
+    private Set<User> visitors = new HashSet<>();
 }

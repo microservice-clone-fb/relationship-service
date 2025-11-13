@@ -1,51 +1,76 @@
 package com.tam.relationship.utils;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 
-import com.tam.relationship.entity.AuditableBaseEntity;
-import com.tam.relationship.service.AuditServices;
+import com.tam.relationship.entity.BaseEntity;
+import com.tam.relationship.service.AuditService;
 
 /**
  * JPA Entity Listener cho audit functionality
- * Không dùng @Component vì sẽ được inject thủ công
+ * Xử lý tất cả entity kế thừa từ BaseEntity
  */
-
-// @Deprecated
 public class AuditListener {
 
-    private AuditServices auditService;
+    private AuditService auditService;
 
-    public AuditListener() {
-        this.auditService = new AuditServices();
+    public AuditListener() {}
+
+    public AuditListener(AuditService auditService) {
+        this.auditService = auditService;
     }
 
+    public void setAuditService(AuditService auditService) {
+        this.auditService = auditService;
+    }
+
+    /**
+     * Xử lý trước khi persist
+     */
     @PrePersist
-    public void prePersist(AuditableBaseEntity entity) {
+    public void prePersist(BaseEntity entity) {
+        if (auditService == null) {
+            return;
+        }
+
         Instant now = Instant.now();
+        LocalDateTime nowDateTime = LocalDateTime.ofInstant(now, ZoneId.systemDefault());
         String currentUser = auditService.getCurrentUsername();
 
         // Set audit fields
-        entity.setCreatedAt(now);
-        entity.setLastUpdatedAt(now);
+        entity.setCreatedAt(nowDateTime);
+        entity.setUpdatedAt(nowDateTime);
         entity.setCreatedBy(currentUser);
-        entity.setLastUpdatedBy(currentUser);
+        entity.setUpdatedBy(currentUser);
+        if (entity.getIsActive() == null) {
+            entity.setIsActive(true);
+        }
 
         // Add history entry
         String historyEntry = auditService.createHistoryEntry(currentUser, "CREATED", now);
         entity.addHistoryEntry(historyEntry);
     }
 
+    /**
+     * Xử lý trước khi update
+     */
     @PreUpdate
-    public void preUpdate(AuditableBaseEntity entity) {
+    public void preUpdate(BaseEntity entity) {
+        if (auditService == null) {
+            return;
+        }
+
         Instant now = Instant.now();
+        LocalDateTime nowDateTime = LocalDateTime.ofInstant(now, ZoneId.systemDefault());
         String currentUser = auditService.getCurrentUsername();
 
         // Update audit fields
-        entity.setLastUpdatedAt(now);
-        entity.setLastUpdatedBy(currentUser);
+        entity.setUpdatedAt(nowDateTime);
+        entity.setUpdatedBy(currentUser);
 
         // Add history entry
         String historyEntry = auditService.createHistoryEntry(currentUser, "UPDATED", now);

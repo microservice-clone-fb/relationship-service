@@ -4,22 +4,23 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.tam.relationship.service.AuditServices;
+import com.tam.relationship.service.AuditService;
 import com.tam.relationship.utils.AuditListener;
 
-// @Deprecated
 @Configuration
 public class AuditConfiguration {
 
     @Bean
-    @ConditionalOnMissingBean(AuditServices.class)
-    public AuditServices auditService() {
-        return new AuditServices();
+    @ConditionalOnMissingBean(AuditService.class)
+    public AuditService auditService() {
+        return new AuditService();
     }
 
     @Bean
     @ConditionalOnMissingBean(AuditListener.class)
-    public AuditListener auditEntityListener() {
-        return new AuditListener();
+    public AuditListener auditEntityListener(AuditService auditService) {
+        AuditListener listener = new AuditListener();
+        listener.setAuditService(auditService);
+        return listener;
     }
 }

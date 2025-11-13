@@ -43,6 +43,17 @@ public enum ErrorCode {
 
     // 7xxx - Relationship Service
     RELATIONSHIP_NOT_FOUND(7101, "Relationship not found", HttpStatus.NOT_FOUND),
+    INVALID_REQUEST(7102, "Invalid request", HttpStatus.BAD_REQUEST),
+    USER_BLOCKED(7103, "User is blocked", HttpStatus.FORBIDDEN),
+    RELATIONSHIP_ALREADY_EXISTS(7104, "Relationship already exists", HttpStatus.CONFLICT),
+    FRIEND_REQUEST_NOT_FOUND(7105, "Friend request not found", HttpStatus.NOT_FOUND),
+    INVALID_FRIEND_REQUEST_STATUS(7106, "Invalid friend request status", HttpStatus.BAD_REQUEST),
+    FRIENDSHIP_NOT_FOUND(7107, "Friendship not found", HttpStatus.NOT_FOUND),
+    NOT_FRIENDS(7108, "Users are not friends", HttpStatus.BAD_REQUEST),
+    ALREADY_FOLLOWING(7109, "Already following this user", HttpStatus.CONFLICT),
+    NOT_FOLLOWING(7110, "Not following this user", HttpStatus.BAD_REQUEST),
+    ALREADY_BLOCKED(7111, "User is already blocked", HttpStatus.CONFLICT),
+    USER_NOT_BLOCKED(7112, "User is not blocked", HttpStatus.BAD_REQUEST),
 
     // 8xxx - Conversation Service
     CONVERSATION_NOT_FOUND(8101, "Conversation not found", HttpStatus.NOT_FOUND),

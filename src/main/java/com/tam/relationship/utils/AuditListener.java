@@ -12,6 +12,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 import com.tam.relationship.entity.BaseEntity;
+import com.tam.relationship.entity.BaseRelationship;
 import com.tam.relationship.service.AuditService;
 
 /**
@@ -46,53 +47,90 @@ public class AuditListener {
      * Xử lý trước khi persist
      */
     @PrePersist
-    public void prePersist(BaseEntity entity) {
-        AuditService auditService = getAuditService();
-
-        Instant now = Instant.now();
-        LocalDateTime nowDateTime = LocalDateTime.ofInstant(now, ZoneId.systemDefault());
-        String currentUser = auditService != null ? auditService.getCurrentUsername() : "SYSTEM";
-
-        // Set audit fields
-        entity.setCreatedAt(nowDateTime);
-        entity.setUpdatedAt(nowDateTime);
-        entity.setCreatedBy(currentUser);
-        entity.setUpdatedBy(currentUser);
-
-        if (entity.getIsActive() == null) {
-            entity.setIsActive(true);
-        }
-
-        // Add history entry
-        if (auditService != null) {
-            String historyEntry = auditService.createHistoryEntry(currentUser, "CREATED", now);
-            entity.addHistoryEntry(historyEntry);
-        } else {
-            entity.addHistoryEntry(String.format("[%s] CREATED by %s", nowDateTime, currentUser));
-        }
+    public void prePersist(Object entity) {
+        applyAuditFields(entity, "CREATED");
     }
 
     /**
      * Xử lý trước khi update
      */
     @PreUpdate
-    public void preUpdate(BaseEntity entity) {
+    public void preUpdate(Object entity) {
+        applyAuditFields(entity, "UPDATED");
+    }
+
+    private void applyAuditFields(Object target, String action) {
+        if (!(target instanceof BaseEntity) && !(target instanceof BaseRelationship)) {
+            return;
+        }
+
         AuditService auditService = getAuditService();
 
         Instant now = Instant.now();
         LocalDateTime nowDateTime = LocalDateTime.ofInstant(now, ZoneId.systemDefault());
         String currentUser = auditService != null ? auditService.getCurrentUsername() : "SYSTEM";
 
-        // Update audit fields
+        if (target instanceof BaseEntity baseEntity) {
+            applyAuditToBaseEntity(baseEntity, action, now, nowDateTime, currentUser, auditService);
+        } else if (target instanceof BaseRelationship baseRelationship) {
+            applyAuditToBaseRelationship(baseRelationship, action, now, nowDateTime, currentUser, auditService);
+        }
+    }
+
+    private void applyAuditToBaseEntity(
+            BaseEntity entity,
+            String action,
+            Instant now,
+            LocalDateTime nowDateTime,
+            String currentUser,
+            AuditService auditService) {
+        if ("CREATED".equals(action)) {
+            entity.setCreatedAt(nowDateTime);
+            entity.setCreatedBy(currentUser);
+            if (entity.getIsActive() == null) {
+                entity.setIsActive(true);
+            }
+        }
+
         entity.setUpdatedAt(nowDateTime);
         entity.setUpdatedBy(currentUser);
 
-        // Add history entry
+        appendHistory(entity::addHistoryEntry, action, now, nowDateTime, currentUser, auditService);
+    }
+
+    private void applyAuditToBaseRelationship(
+            BaseRelationship relationship,
+            String action,
+            Instant now,
+            LocalDateTime nowDateTime,
+            String currentUser,
+            AuditService auditService) {
+        if ("CREATED".equals(action)) {
+            relationship.setCreatedAt(nowDateTime);
+            relationship.setCreatedBy(currentUser);
+            if (relationship.getIsActive() == null) {
+                relationship.setIsActive(true);
+            }
+        }
+
+        relationship.setUpdatedAt(nowDateTime);
+        relationship.setUpdatedBy(currentUser);
+
+        appendHistory(relationship::addHistoryEntry, action, now, nowDateTime, currentUser, auditService);
+    }
+
+    private void appendHistory(
+            java.util.function.Consumer<String> historyConsumer,
+            String action,
+            Instant now,
+            LocalDateTime nowDateTime,
+            String currentUser,
+            AuditService auditService) {
         if (auditService != null) {
-            String historyEntry = auditService.createHistoryEntry(currentUser, "UPDATED", now);
-            entity.addHistoryEntry(historyEntry);
+            String historyEntry = auditService.createHistoryEntry(currentUser, action, now);
+            historyConsumer.accept(historyEntry);
         } else {
-            entity.addHistoryEntry(String.format("[%s] UPDATED by %s", nowDateTime, currentUser));
+            historyConsumer.accept(String.format("[%s] %s by %s", nowDateTime, action, currentUser));
         }
     }
 }

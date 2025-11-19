@@ -1,9 +1,8 @@
 package com.tam.relationship.dto.response.relationshipuser;
 
-import lombok.*;
-
-import java.util.List;
 import java.util.Set;
+
+import lombok.*;
 
 @Getter
 @Setter
@@ -20,4 +19,6 @@ public class RelationshipUserResponse {
     Set<String> following;
     Set<String> closeFriends;
     Set<String> anotherUserFollowedIt; //  nhung nguoi theo doi nguoi nay
+    Set<String> incomingFriendRequests;
+    Set<String> outgoingFriendRequests;
 }

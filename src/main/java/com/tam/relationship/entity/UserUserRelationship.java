@@ -14,10 +14,10 @@ import lombok.*;
 @Table(
         name = "user_user_join",
         indexes = {
-                @Index(name = "idx_uu_user1_type_status", columnList = "user1_id, relation_type, status, is_active"),
-                @Index(name = "idx_uu_user2_type_status", columnList = "user2_id, relation_type, status, is_active"),
-                @Index(name = "idx_uu_bidirectional", columnList = "user1_id, user2_id, relation_type"),
-                @Index(name = "idx_uu_created_at", columnList = "created_at")
+            @Index(name = "idx_uu_user1_type_status", columnList = "user1_id, relation_type, status, is_active"),
+            @Index(name = "idx_uu_user2_type_status", columnList = "user2_id, relation_type, status, is_active"),
+            @Index(name = "idx_uu_bidirectional", columnList = "user1_id, user2_id, relation_type"),
+            @Index(name = "idx_uu_created_at", columnList = "created_at")
         })
 @Getter
 @Setter

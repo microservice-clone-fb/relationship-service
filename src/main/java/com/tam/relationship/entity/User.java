@@ -19,6 +19,7 @@ public class User extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
+    @Column(name = "user_id", nullable = false, unique = true)
     private String userId;
 
     // Navigation properties - Thay @ManyToMany bằng @OneToMany

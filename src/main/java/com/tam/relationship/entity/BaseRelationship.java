@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import jakarta.persistence.*;
 
+import com.tam.relationship.entity.enums.RelationshipStatus;
 import com.tam.relationship.utils.AuditListener;
 
 import lombok.Getter;
@@ -22,8 +23,9 @@ public abstract class BaseRelationship {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private String status = "ACTIVE"; // ACTIVE, PENDING, REJECTED, BLOCKED, ENDED
+    private RelationshipStatus status = RelationshipStatus.ACTIVE;
 
     @Column(name = "started_at")
     private LocalDateTime startedAt;

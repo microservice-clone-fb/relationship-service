@@ -54,6 +54,14 @@ public enum ErrorCode {
     NOT_FOLLOWING(7110, "Not following this user", HttpStatus.BAD_REQUEST),
     ALREADY_BLOCKED(7111, "User is already blocked", HttpStatus.CONFLICT),
     USER_NOT_BLOCKED(7112, "User is not blocked", HttpStatus.BAD_REQUEST),
+    USER_CANNOT_CREATED(7113, "User cannot be created", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    // 7200 - Entity CRUD errors
+    GROUP_NOT_FOUND(7201, "Group not found", HttpStatus.NOT_FOUND),
+    USER_NOT_FOUND(7202, "User not found", HttpStatus.NOT_FOUND),
+    LOCATION_NOT_FOUND(7203, "Location not found", HttpStatus.NOT_FOUND),
+    PAGE_NOT_FOUND(7204, "Page not found", HttpStatus.NOT_FOUND),
+    USERNAME_ALREADY_EXISTS(7205, "Username already exists", HttpStatus.CONFLICT),
 
     // 8xxx - Conversation Service
     CONVERSATION_NOT_FOUND(8101, "Conversation not found", HttpStatus.NOT_FOUND),

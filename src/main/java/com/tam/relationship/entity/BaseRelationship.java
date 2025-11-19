@@ -4,41 +4,35 @@ import java.time.LocalDateTime;
 
 import jakarta.persistence.*;
 
-import com.tam.relationship.entity.enums.DetailType;
 import com.tam.relationship.utils.AuditListener;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
- * Bảng Detail để lưu trữ các thông tin chi tiết
- * Không có mối quan hệ với bất kỳ entity nào
+ * Base class cho tất cả các bảng quan hệ
+ * Chứa các thuộc tính chung: status, metadata, timestamps
  */
-@Entity
-@Table(
-        name = "details",
-        indexes = {
-            @Index(name = "idx_detail_type", columnList = "type"),
-            @Index(name = "idx_detail_created_at", columnList = "created_at")
-        })
+@MappedSuperclass
 @EntityListeners(AuditListener.class)
 @Getter
 @Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-@Deprecated
-@SuppressWarnings("Entity này ko dùng nưa nhưng ko nỡ xóa")
-public class Detail extends BaseEntity {
+public abstract class BaseRelationship {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false)
-    private DetailType type;
+    @Column(name = "status", nullable = false)
+    private String status = "ACTIVE"; // ACTIVE, PENDING, REJECTED, BLOCKED, ENDED
 
-    @Column(name = "data", columnDefinition = "TEXT")
-    private String data; // JSON hoặc text data
+    @Column(name = "started_at")
+    private LocalDateTime startedAt;
+
+    @Column(name = "ended_at")
+    private LocalDateTime endedAt;
+
+    @Column(name = "metadata", columnDefinition = "TEXT")
+    private String metadata; // JSON cho các thông tin bổ sung
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -51,6 +45,9 @@ public class Detail extends BaseEntity {
 
     @Column(name = "updated_by")
     private String updatedBy;
+
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 
     @Column(name = "history", columnDefinition = "TEXT")
     private String history;

@@ -19,14 +19,13 @@ public class Group extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    // @Column(name = "group_id", nullable = false)
-    // private String groupId;
+    @Column(name = "name", nullable = false)
+    private String name;
 
-    @ManyToMany
-    @JoinTable(
-            name = "user_group_join",
-            joinColumns = @JoinColumn(name = "group_id"),
-            inverseJoinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "description")
+    private String description;
+
+    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private Set<User> members = new HashSet<>();
+    private Set<UserGroupRelationship> userRelations = new HashSet<>();
 }

@@ -7,6 +7,10 @@ import java.time.ZoneId;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.stereotype.Component;
+
 import com.tam.relationship.entity.BaseEntity;
 import com.tam.relationship.service.AuditService;
 
@@ -14,18 +18,28 @@ import com.tam.relationship.service.AuditService;
  * JPA Entity Listener cho audit functionality
  * Xử lý tất cả entity kế thừa từ BaseEntity
  */
+@Component
 public class AuditListener {
 
-    private AuditService auditService;
+    private static ApplicationContext applicationContext;
 
-    public AuditListener() {}
-
-    public AuditListener(AuditService auditService) {
-        this.auditService = auditService;
+    @Autowired
+    public void setApplicationContext(ApplicationContext context) {
+        AuditListener.applicationContext = context;
     }
 
-    public void setAuditService(AuditService auditService) {
-        this.auditService = auditService;
+    /**
+     * Lấy AuditService từ Spring Context
+     */
+    private AuditService getAuditService() {
+        if (applicationContext == null) {
+            return null;
+        }
+        try {
+            return applicationContext.getBean(AuditService.class);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**
@@ -33,26 +47,29 @@ public class AuditListener {
      */
     @PrePersist
     public void prePersist(BaseEntity entity) {
-        if (auditService == null) {
-            return;
-        }
+        AuditService auditService = getAuditService();
 
         Instant now = Instant.now();
         LocalDateTime nowDateTime = LocalDateTime.ofInstant(now, ZoneId.systemDefault());
-        String currentUser = auditService.getCurrentUsername();
+        String currentUser = auditService != null ? auditService.getCurrentUsername() : "SYSTEM";
 
         // Set audit fields
         entity.setCreatedAt(nowDateTime);
         entity.setUpdatedAt(nowDateTime);
         entity.setCreatedBy(currentUser);
         entity.setUpdatedBy(currentUser);
+
         if (entity.getIsActive() == null) {
             entity.setIsActive(true);
         }
 
         // Add history entry
-        String historyEntry = auditService.createHistoryEntry(currentUser, "CREATED", now);
-        entity.addHistoryEntry(historyEntry);
+        if (auditService != null) {
+            String historyEntry = auditService.createHistoryEntry(currentUser, "CREATED", now);
+            entity.addHistoryEntry(historyEntry);
+        } else {
+            entity.addHistoryEntry(String.format("[%s] CREATED by %s", nowDateTime, currentUser));
+        }
     }
 
     /**
@@ -60,20 +77,22 @@ public class AuditListener {
      */
     @PreUpdate
     public void preUpdate(BaseEntity entity) {
-        if (auditService == null) {
-            return;
-        }
+        AuditService auditService = getAuditService();
 
         Instant now = Instant.now();
         LocalDateTime nowDateTime = LocalDateTime.ofInstant(now, ZoneId.systemDefault());
-        String currentUser = auditService.getCurrentUsername();
+        String currentUser = auditService != null ? auditService.getCurrentUsername() : "SYSTEM";
 
         // Update audit fields
         entity.setUpdatedAt(nowDateTime);
         entity.setUpdatedBy(currentUser);
 
         // Add history entry
-        String historyEntry = auditService.createHistoryEntry(currentUser, "UPDATED", now);
-        entity.addHistoryEntry(historyEntry);
+        if (auditService != null) {
+            String historyEntry = auditService.createHistoryEntry(currentUser, "UPDATED", now);
+            entity.addHistoryEntry(historyEntry);
+        } else {
+            entity.addHistoryEntry(String.format("[%s] UPDATED by %s", nowDateTime, currentUser));
+        }
     }
 }

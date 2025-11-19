@@ -19,14 +19,25 @@ public class Page extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    // @Column(name = "page_id", nullable = false)
-    // private String pageId;
+    @Column(name = "name", nullable = false)
+    private String name;
 
-    @ManyToMany
-    @JoinTable(
-            name = "user_page_join",
-            joinColumns = @JoinColumn(name = "page_id"),
-            inverseJoinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "description")
+    private String description;
+
+    @Column(name = "category")
+    private String category;
+
+    @Column(name = "website")
+    private String website;
+
+    @Column(name = "phone")
+    private String phone;
+
+    @Column(name = "email")
+    private String email;
+
+    @OneToMany(mappedBy = "page", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private Set<User> followers = new HashSet<>();
+    private Set<UserPageRelationship> userRelations = new HashSet<>();
 }

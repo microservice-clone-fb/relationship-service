@@ -19,14 +19,25 @@ public class Location extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    // @Column(name = "location_id", nullable = false)
-    // private String locationId;
+    @Column(name = "name", nullable = false)
+    private String name;
 
-    @ManyToMany
-    @JoinTable(
-            name = "user_location_join",
-            joinColumns = @JoinColumn(name = "location_id"),
-            inverseJoinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "address")
+    private String address;
+
+    @Column(name = "city")
+    private String city;
+
+    @Column(name = "country")
+    private String country;
+
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
+    @OneToMany(mappedBy = "location", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private Set<User> visitors = new HashSet<>();
+    private Set<UserLocationRelationship> userRelations = new HashSet<>();
 }

@@ -19,14 +19,26 @@ public class User extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    // @Column(name = "user_id", nullable = false)
-    // private String userId;
+    private String userId;
 
-    @ManyToMany
-    @JoinTable(
-            name = "user_user_join",
-            joinColumns = @JoinColumn(name = "user1_id"),
-            inverseJoinColumns = @JoinColumn(name = "user2_id"))
+    // Navigation properties - Thay @ManyToMany bằng @OneToMany
+    @OneToMany(mappedBy = "user1", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private Set<User> connectedUsers = new HashSet<>();
+    private Set<UserUserRelationship> userRelations1 = new HashSet<>();
+
+    @OneToMany(mappedBy = "user2", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<UserUserRelationship> userRelations2 = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<UserGroupRelationship> groupRelations = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<UserLocationRelationship> locationRelations = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<UserPageRelationship> pageRelations = new HashSet<>();
 }

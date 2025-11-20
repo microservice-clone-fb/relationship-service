@@ -36,6 +36,12 @@ app:
   services:
     file: ${FILE_SERVICE_URL:http://localhost:5005}
 
+socketio:
+  host: ${SOCKETIO_HOST:0.0.0.0}  # Bind to all interfaces (0.0.0.0 = all network interfaces)
+  port: ${SOCKETIO_PORT:9092}  # Socket.IO port riêng (không thể chạy cùng port với HTTP server)
+  # Lưu ý: netty-socketio là standalone server, không thể bind cùng port với Spring Boot Tomcat
+  # Nếu muốn chạy cùng port, cần integrate vào Spring Boot container (phức tạp hơn)
+
 logging:
   level:
     root: ${LOGGING_LEVEL:INFO}

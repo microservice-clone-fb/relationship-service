@@ -1,0 +1,108 @@
+package com.tam.relationship.configuration;
+
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.stereotype.Service;
+
+import com.corundumstudio.socketio.SocketIOServer;
+import com.corundumstudio.socketio.listener.ConnectListener;
+import com.corundumstudio.socketio.listener.DisconnectListener;
+
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
+
+@Service
+@RequiredArgsConstructor
+@FieldDefaults(level = lombok.AccessLevel.PRIVATE)
+@Slf4j
+public class SocketIOService implements ApplicationListener<ApplicationReadyEvent> {
+
+    final SocketIOServer socketIOServer;
+    volatile boolean started = false;
+
+    /**
+     * Start Socket.IO server AFTER Spring Boot HTTP server is ready
+     * This avoids port conflict by starting Socket.IO server after Tomcat has bound to the port
+     */
+    @Override
+    public void onApplicationEvent(ApplicationReadyEvent event) {
+        if (!started) {
+            start();
+        }
+    }
+
+    /**
+     * Fallback: Start immediately if ApplicationReadyEvent doesn't fire
+     */
+    @PostConstruct
+    public void init() {
+        // Don't start here - wait for ApplicationReadyEvent
+        // This ensures Spring Boot HTTP server starts first
+    }
+
+    private void start() {
+        if (started) {
+            return;
+        }
+
+        try {
+            log.info("🚀 Starting Socket.IO server...");
+            socketIOServer.addConnectListener(onConnected());
+            socketIOServer.addDisconnectListener(onDisconnected());
+            socketIOServer.start();
+            started = true;
+            log.info("✅ Socket.IO server started successfully");
+        } catch (Exception e) {
+            log.error("❌ Failed to start Socket.IO server", e);
+        }
+    }
+
+    @PreDestroy
+    public void stop() {
+        log.info("🛑 Stopping Socket.IO server...");
+        socketIOServer.stop();
+        log.info("✅ Socket.IO server stopped");
+    }
+
+    private ConnectListener onConnected() {
+        return socket -> {
+            String userId = socket.getHandshakeData().getSingleUrlParam("userId");
+            log.info("✅ Socket client connected - Session ID: {}, User ID: {}", socket.getSessionId(), userId);
+
+            // Store user session if needed
+            socket.set("userId", userId);
+        };
+    }
+
+    private DisconnectListener onDisconnected() {
+        return socket -> {
+            String userId = (String) socket.get("userId");
+            log.info("❌ Socket client disconnected - Session ID: {}, User ID: {}", socket.getSessionId(), userId);
+        };
+    }
+
+    /**
+     * Emit event to specific user by userId
+     */
+    public void emitToUser(String userId, String eventName, Object data) {
+        socketIOServer.getAllClients().forEach(client -> {
+            String clientUserId = (String) client.get("userId");
+            if (userId.equals(clientUserId)) {
+                client.sendEvent(eventName, data);
+                log.debug("📤 Emitted event '{}' to user: {}", eventName, userId);
+            }
+        });
+    }
+
+    /**
+     * Emit event to all connected clients
+     */
+    public void emitToAll(String eventName, Object data) {
+        socketIOServer.getBroadcastOperations().sendEvent(eventName, data);
+        log.debug("📢 Broadcasted event '{}' to all clients", eventName);
+    }
+}

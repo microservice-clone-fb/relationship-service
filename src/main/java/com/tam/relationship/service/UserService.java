@@ -35,6 +35,7 @@ public class UserService {
 
     UserRepository userRepository;
     UserWithUserRepository userWithUserRepository;
+    WebSocketNotificationService webSocketNotificationService;
 
     public boolean createUser(String userId) {
         if (userRepository.existsByUserId(userId)) {
@@ -134,6 +135,13 @@ public class UserService {
         relationship.setMetadata(request.getMessage());
 
         userWithUserRepository.save(relationship);
+
+        // Emit WebSocket notification to target user
+        webSocketNotificationService.notifyFriendRequestSent(
+                request.getTargetUserId(),
+                request.getRequesterId(),
+                null // Requester name can be fetched from profile service if needed
+                );
     }
 
     public void cancelFriendRequest(FriendRequestCancelRequest request) {
@@ -153,6 +161,9 @@ public class UserService {
         }
 
         userWithUserRepository.delete(relationship);
+
+        // Emit WebSocket notification - requester cancelled the pending invite
+        webSocketNotificationService.notifyFriendRequestCancelled(request.getTargetUserId(), request.getRequesterId());
     }
 
     public void respondFriendRequest(FriendRequestRespondRequest request) {
@@ -170,8 +181,16 @@ public class UserService {
             relationship.setStartedAt(LocalDateTime.now());
             relationship.addHistoryEntry("%s_accept_%s".formatted(request.getTargetUserId(), LocalDateTime.now()));
             userWithUserRepository.save(relationship);
+
+            // Emit WebSocket notification - both users are now friends
+            webSocketNotificationService.notifyFriendRequestAccepted(
+                    request.getRequesterId(), request.getTargetUserId());
         } else {
             userWithUserRepository.delete(relationship);
+
+            // Emit WebSocket notification - request rejected
+            webSocketNotificationService.notifyFriendRequestRejected(
+                    request.getRequesterId(), request.getTargetUserId());
             return;
         }
     }
@@ -186,6 +205,9 @@ public class UserService {
         }
 
         userWithUserRepository.delete(relationship);
+
+        // Emit WebSocket notification - friendship removed
+        webSocketNotificationService.notifyFriendshipRemoved(request.getUserId(), request.getFriendId());
     }
 
     private void handlePendingRequestOnSend(
@@ -199,6 +221,10 @@ public class UserService {
             existingRelationship.setStartedAt(LocalDateTime.now());
             existingRelationship.addHistoryEntry(
                     "%s_auto_accept_%s".formatted(request.getRequesterId(), LocalDateTime.now()));
+
+            // Emit WebSocket notification - auto-accepted (mutual friend request)
+            webSocketNotificationService.notifyFriendRequestAccepted(
+                    request.getRequesterId(), request.getTargetUserId());
         } else {
             throw new AppException(ErrorCode.RELATIONSHIP_ALREADY_EXISTS);
         }

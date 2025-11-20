@@ -137,6 +137,8 @@ public class UserService {
     }
 
     public void cancelFriendRequest(FriendRequestCancelRequest request) {
+        validateDistinctUsers(request.getRequesterId(), request.getTargetUserId());
+
         UserUserRelationship relationship = userWithUserRepository
                 .findDirectedRelationship(
                         request.getRequesterId(),
@@ -144,6 +146,11 @@ public class UserService {
                         UserUserRelationType.FRIEND,
                         RelationshipStatus.PENDING)
                 .orElseThrow(() -> new AppException(ErrorCode.FRIEND_REQUEST_NOT_FOUND));
+
+        // Verify that the requester is the one who sent the request (user1)
+        if (!relationship.getUser1().getUserId().equals(request.getRequesterId())) {
+            throw new AppException(ErrorCode.FRIEND_REQUEST_NOT_FOUND);
+        }
 
         userWithUserRepository.delete(relationship);
     }

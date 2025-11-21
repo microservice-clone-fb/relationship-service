@@ -49,4 +49,9 @@ public class SecurityConfig {
 
         return jwtAuthenticationConverter;
     }
+
+    @Bean
+    public org.springframework.web.client.RestTemplate restTemplate() {
+        return new org.springframework.web.client.RestTemplate();
+    }
 }

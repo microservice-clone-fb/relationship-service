@@ -17,7 +17,7 @@ public class SocketIOConfig {
 
     // Socket.IO cần port riêng (netty-socketio là standalone Netty server)
     // Không thể bind cùng port với Spring Boot Tomcat server
-    @Value("${socketio.port:9092}")
+    @Value("${socketio.port:9093}")
     private Integer port;
 
     @Bean

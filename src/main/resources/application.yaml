@@ -35,12 +35,13 @@ spring:
 app:
   services:
     file: ${FILE_SERVICE_URL:http://localhost:5005}
+    gateway: ${GATEWAY_URL:http://localhost:5000}  # Gateway URL để emit Socket.IO events
 
 socketio:
   host: ${SOCKETIO_HOST:0.0.0.0}  # Bind to all interfaces (0.0.0.0 = all network interfaces)
-  port: ${SOCKETIO_PORT:9092}  # Socket.IO port riêng (không thể chạy cùng port với HTTP server)
+  port: ${SOCKETIO_PORT:9093}  # Socket.IO port riêng (không thể chạy cùng port với HTTP server)
   # Lưu ý: netty-socketio là standalone server, không thể bind cùng port với Spring Boot Tomcat
-  # Nếu muốn chạy cùng port, cần integrate vào Spring Boot container (phức tạp hơn)
+  # Gateway dùng port 9092, relationship-service dùng port 9093 để tránh conflict
 
 logging:
   level:

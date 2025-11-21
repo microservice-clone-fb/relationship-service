@@ -1,6 +1,12 @@
 package com.tam.relationship.service;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import com.tam.relationship.configuration.SocketIOService;
 
@@ -10,14 +16,19 @@ import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
-@FieldDefaults(makeFinal = true, level = lombok.AccessLevel.PRIVATE)
+@FieldDefaults(level = lombok.AccessLevel.PRIVATE)
 @Slf4j
 public class WebSocketNotificationService {
 
-    SocketIOService socketIOService;
+    @Value("${app.services.gateway:http://localhost:5000}")
+    String gatewayUrl;
+
+    final SocketIOService socketIOService; // Fallback: vẫn giữ để dùng nếu gateway không available
+    final RestTemplate restTemplate;
 
     /**
      * Emit friend request sent event to target user
+     * Gọi Gateway Socket.IO endpoint để emit event
      */
     public void notifyFriendRequestSent(String targetUserId, String requesterId, String requesterName) {
         log.info("📤 [WebSocket] Emitting friendRequest:received to target user: {}", targetUserId);
@@ -30,10 +41,33 @@ public class WebSocketNotificationService {
                 .targetUserId(targetUserId)
                 .build();
 
-        // Emit to specific user via Socket.IO - NGAY LẬP TỨC
-        socketIOService.emitToUser(targetUserId, "friendRequest:received", notification);
+        // Gọi Gateway Socket.IO endpoint để emit event
+        try {
+            String url = gatewayUrl + "/internal/socketio/emit";
+            EmitEventRequest request = new EmitEventRequest(targetUserId, "friendRequest:received", notification);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<EmitEventRequest> entity = new HttpEntity<>(request, headers);
+
+            ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+            log.info("✅ [WebSocket] Event emitted via Gateway - Status: {}", response.getStatusCode());
+        } catch (Exception e) {
+            log.error("❌ [WebSocket] Failed to emit via Gateway, falling back to local Socket.IO", e);
+            // Fallback: emit trực tiếp nếu gateway không available
+            socketIOService.emitToUser(targetUserId, "friendRequest:received", notification);
+        }
 
         log.info("✅ [WebSocket] Event friendRequest:received emitted to user: {}", targetUserId);
+    }
+
+    @lombok.Data
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
+    private static class EmitEventRequest {
+        private String userId;
+        private String eventName;
+        private Object data;
     }
 
     /**

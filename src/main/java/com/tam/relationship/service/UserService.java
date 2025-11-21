@@ -14,6 +14,8 @@ import com.tam.relationship.dto.request.relationshipuser.FriendRequestDecision;
 import com.tam.relationship.dto.request.relationshipuser.FriendRequestRespondRequest;
 import com.tam.relationship.dto.request.relationshipuser.FriendRequestSendRequest;
 import com.tam.relationship.dto.request.relationshipuser.UnfriendRequest;
+import com.tam.relationship.dto.response.relationshipuser.IncomingFriendRequestsResponse;
+import com.tam.relationship.dto.response.relationshipuser.OutgoingFriendRequestsResponse;
 import com.tam.relationship.dto.response.relationshipuser.RelationshipUserResponse;
 import com.tam.relationship.entity.User;
 import com.tam.relationship.entity.UserUserRelationship;
@@ -262,5 +264,39 @@ public class UserService {
         if (requesterId.equals(targetUserId)) {
             throw new AppException(ErrorCode.INVALID_REQUEST);
         }
+    }
+
+    public IncomingFriendRequestsResponse getIncomingFriendRequests(String userId) {
+        List<UserUserRelationship> listAllRelationships =
+                userWithUserRepository.findAllRelationshipBetweenUserAndUserByOneUserId(userId);
+
+        Set<String> incomingFriendRequests = listAllRelationships.stream()
+                .filter(relationship -> relationship.getRelationType() == UserUserRelationType.FRIEND)
+                .filter(relationship -> relationship.getStatus() == RelationshipStatus.PENDING)
+                .filter(relationship -> Objects.equals(relationship.getUser2().getUserId(), userId))
+                .map(relationship -> relationship.getUser1().getUserId())
+                .collect(Collectors.toSet());
+
+        return IncomingFriendRequestsResponse.builder()
+                .userId(userId)
+                .incomingFriendRequests(incomingFriendRequests)
+                .build();
+    }
+
+    public OutgoingFriendRequestsResponse getOutgoingFriendRequests(String userId) {
+        List<UserUserRelationship> listAllRelationships =
+                userWithUserRepository.findAllRelationshipBetweenUserAndUserByOneUserId(userId);
+
+        Set<String> outgoingFriendRequests = listAllRelationships.stream()
+                .filter(relationship -> relationship.getRelationType() == UserUserRelationType.FRIEND)
+                .filter(relationship -> relationship.getStatus() == RelationshipStatus.PENDING)
+                .filter(relationship -> Objects.equals(relationship.getUser1().getUserId(), userId))
+                .map(relationship -> relationship.getUser2().getUserId())
+                .collect(Collectors.toSet());
+
+        return OutgoingFriendRequestsResponse.builder()
+                .userId(userId)
+                .outgoingFriendRequests(outgoingFriendRequests)
+                .build();
     }
 }

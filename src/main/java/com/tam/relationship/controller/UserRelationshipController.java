@@ -14,6 +14,8 @@ import com.tam.relationship.dto.request.relationshipuser.FriendRequestCancelRequ
 import com.tam.relationship.dto.request.relationshipuser.FriendRequestRespondRequest;
 import com.tam.relationship.dto.request.relationshipuser.FriendRequestSendRequest;
 import com.tam.relationship.dto.request.relationshipuser.UnfriendRequest;
+import com.tam.relationship.dto.response.relationshipuser.IncomingFriendRequestsResponse;
+import com.tam.relationship.dto.response.relationshipuser.OutgoingFriendRequestsResponse;
 import com.tam.relationship.dto.response.relationshipuser.RelationshipUserResponse;
 import com.tam.relationship.service.UserService;
 
@@ -58,5 +60,21 @@ public class UserRelationshipController {
     ApiResponse<String> unfriend(@Valid @RequestBody UnfriendRequest request) {
         userService.unfriend(request);
         return ApiResponse.<String>builder().result("Friend removed").build();
+    }
+
+    @GetMapping("/friend-requests/incoming/{userId}")
+    ApiResponse<IncomingFriendRequestsResponse> getIncomingFriendRequests(@PathVariable String userId) {
+        IncomingFriendRequestsResponse response = userService.getIncomingFriendRequests(userId);
+        return ApiResponse.<IncomingFriendRequestsResponse>builder()
+                .result(response)
+                .build();
+    }
+
+    @GetMapping("/friend-requests/outgoing/{userId}")
+    ApiResponse<OutgoingFriendRequestsResponse> getOutgoingFriendRequests(@PathVariable String userId) {
+        OutgoingFriendRequestsResponse response = userService.getOutgoingFriendRequests(userId);
+        return ApiResponse.<OutgoingFriendRequestsResponse>builder()
+                .result(response)
+                .build();
     }
 }

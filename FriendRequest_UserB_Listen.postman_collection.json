@@ -1,0 +1,181 @@
+{
+	"info": {
+		"_postman_id": "friend-request-user-b-listen",
+		"name": "Friend Request - User B (Listen Realtime)",
+		"description": "Collection cho User B - Login và lấy userId\n\n**⚠️ Lưu ý:** Postman WebSocket không hỗ trợ đầy đủ Socket.IO protocol.\n\n**Cách test realtime:**\n1. Dùng Expo Go app trên điện thoại để connect Socket.IO (User B)\n2. Hoặc check server logs để xem backend có emit event không\n\n**Cách dùng trong Postman:**\n1. Import collection này vào Postman\n2. Chạy request \"🚀 Auto: Get User B Info\" → Tự động login và lấy userId\n3. Copy `userB_userId` → Gửi cho User A collection (set vào variable `target_user_id`)\n4. User A gửi friend request qua REST API → Backend sẽ emit event cho User B\n\n**Events sẽ nhận (nếu connect qua Socket.IO client):**\n- friendRequest:received - Khi có người gửi lời mời\n- friendRequest:cancelled - Khi lời mời bị hủy\n- friendRequest:accepted - Khi chấp nhận lời mời\n- friendRequest:rejected - Khi từ chối lời mời\n- friendship:removed - Khi bị xóa bạn bè",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "🚀 Auto: Get User B Info",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// This is a placeholder - actual execution happens in sub-requests",
+							"const userId = pm.collectionVariables.get(\"userB_userId\");",
+							"console.log(\"✅ User B logged in successfully!\");",
+							"console.log(\"📋 ⚠️ QUAN TRỌNG: Copy userId này và gửi cho User A:\", userId);",
+							"console.log(\"\");",
+							"console.log(\"💡 Để test realtime:\");",
+							"console.log(\"1. Dùng Expo Go app trên điện thoại để connect Socket.IO (User B)\");",
+							"console.log(\"2. Hoặc check server logs để xem backend có emit event không\");",
+							"console.log(\"3. Postman WebSocket không hỗ trợ đầy đủ Socket.IO protocol\");"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"item": [
+				{
+					"name": "1. Login User B",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.code === 1000 && jsonData.result) {",
+									"        pm.collectionVariables.set(\"userB_token\", jsonData.result.token);",
+									"        pm.collectionVariables.set(\"userB_userId\", jsonData.result.userId);",
+									"        console.log(\"✅ User B logged in:\", jsonData.result.userId);",
+									"        console.log(\"📋 ⚠️ QUAN TRỌNG: Copy userId này và gửi cho User A:\", jsonData.result.userId);",
+									"    } else {",
+									"        throw new Error(\"Login failed: \" + jsonData.message);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"{{userB_username}}\",\n    \"password\": \"{{userB_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/identity/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["identity", "auth", "login"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Manual: Login User B",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    const jsonData = pm.response.json();",
+							"    if (jsonData.code === 1000 && jsonData.result) {",
+							"        pm.collectionVariables.set(\"userB_token\", jsonData.result.token);",
+							"        pm.collectionVariables.set(\"userB_userId\", jsonData.result.userId);",
+							"        console.log(\"✅ User B logged in:\", jsonData.result.userId);",
+							"        console.log(\"📋 ⚠️ QUAN TRỌNG: Copy userId này và gửi cho User A:\", jsonData.result.userId);",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"{{userB_username}}\",\n    \"password\": \"{{userB_password}}\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/identity/auth/login",
+					"host": ["{{base_url}}"],
+					"path": ["identity", "auth", "login"]
+				}
+			}
+		},
+		{
+			"name": "⚠️ Manual: Connect WebSocket (Không hoạt động trong Postman)",
+			"request": {
+				"protocolProfileBehavior": {
+					"disabledSystemHeaders": {}
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "ws://{{socketio_host}}:{{socketio_port}}/?userId={{userB_userId}}&token={{userB_token}}",
+					"protocol": "ws",
+					"host": ["{{socketio_host}}"],
+					"port": "{{socketio_port}}",
+					"query": [
+						{
+							"key": "userId",
+							"value": "{{userB_userId}}"
+						},
+						{
+							"key": "token",
+							"value": "{{userB_token}}"
+						}
+					]
+				},
+				"description": "**⚠️ Lưu ý:** Postman WebSocket không hỗ trợ đầy đủ Socket.IO protocol.\n\nSocket.IO không phải là WebSocket thuần - nó có handshake và transport layer riêng.\n\n**Giải pháp thay thế:**\n1. **Dùng Expo Go app** trên điện thoại để connect Socket.IO (User B)\n2. **Check server logs** để xem backend có emit event không\n3. **Dùng REST API** trong Postman cho User A → Backend vẫn emit event cho User B\n\n**Cách test realtime:**\n- User A: Gửi friend request qua REST API trong Postman\n- User B: Connect Socket.IO qua Expo Go app → Sẽ nhận event realtime\n- Server logs: Sẽ thấy `[WebSocket] Emitting friendRequest:received to user: ...`"
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5000/v1",
+			"type": "string"
+		},
+		{
+			"key": "socketio_host",
+			"value": "localhost",
+			"type": "string"
+		},
+		{
+			"key": "socketio_port",
+			"value": "9092",
+			"type": "string"
+		},
+		{
+			"key": "userB_username",
+			"value": "test181@gmail.com",
+			"type": "string"
+		},
+		{
+			"key": "userB_password",
+			"value": "123456",
+			"type": "string"
+		},
+		{
+			"key": "userB_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userB_userId",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
+

@@ -89,13 +89,27 @@ public class SocketIOService implements ApplicationListener<ApplicationReadyEven
      * Emit event to specific user by userId
      */
     public void emitToUser(String userId, String eventName, Object data) {
+        log.info("🔍 [SocketIO] Looking for connected client with userId: {}", userId);
+        int connectedClients = socketIOServer.getAllClients().size();
+        log.info("🔍 [SocketIO] Total connected clients: {}", connectedClients);
+
+        final boolean[] found = {false};
         socketIOServer.getAllClients().forEach(client -> {
             String clientUserId = (String) client.get("userId");
+            log.debug("🔍 [SocketIO] Checking client - Session: {}, UserId: {}", client.getSessionId(), clientUserId);
+
             if (userId.equals(clientUserId)) {
+                log.info("✅ [SocketIO] Found matching client! Emitting event '{}' to user: {}", eventName, userId);
                 client.sendEvent(eventName, data);
-                log.debug("📤 Emitted event '{}' to user: {}", eventName, userId);
+                log.info("📤 [SocketIO] Event '{}' emitted successfully to user: {}", eventName, userId);
+                found[0] = true;
             }
         });
+
+        if (!found[0]) {
+            log.warn("⚠️ [SocketIO] User {} is not connected. Event '{}' will not be delivered.", userId, eventName);
+            log.warn("⚠️ [SocketIO] Make sure user {} has Socket.IO connection active.", userId);
+        }
     }
 
     /**

@@ -1,0 +1,283 @@
+{
+	"info": {
+		"_postman_id": "friend-request-user-a-emit",
+		"name": "Friend Request - User A (Emit)",
+		"description": "Collection cho User A - Tự động login, connect WebSocket và emit friendRequest:send\n\n**Cách dùng:**\n1. Import collection này vào Postman\n2. Set variable `target_user_id` = userId của User B (copy từ User B collection)\n3. Chạy request \"🚀 Auto: Send Friend Request\" → Tự động làm tất cả!\n\n**Flow tự động:**\n1. Login User A → Lưu token và userId\n2. Connect WebSocket\n3. Emit friendRequest:send\n4. Hiển thị kết quả",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "🚀 Auto: Send Friend Request",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Check if target_user_id is set",
+							"const targetUserId = pm.collectionVariables.get(\"target_user_id\");",
+							"if (!targetUserId) {",
+							"    console.error(\"❌ Chưa set target_user_id! Copy userId từ User B collection và set vào variable.\");",
+							"    throw new Error(\"Please set 'target_user_id' variable first (copy from User B collection)\");",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// This is a placeholder - actual execution happens in sub-requests",
+							"console.log(\"✅ Friend request sent successfully!\");"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"item": [
+				{
+					"name": "1. Login User A",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.code === 1000 && jsonData.result) {",
+									"        pm.collectionVariables.set(\"userA_token\", jsonData.result.token);",
+									"        pm.collectionVariables.set(\"userA_userId\", jsonData.result.userId);",
+									"        console.log(\"✅ User A logged in:\", jsonData.result.userId);",
+									"    } else {",
+									"        throw new Error(\"Login failed: \" + jsonData.message);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"{{userA_username}}\",\n    \"password\": \"{{userA_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/identity/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["identity", "auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "2. Send Friend Request (REST API)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.code === 1000) {",
+									"        console.log(\"✅ Friend request sent successfully!\");",
+									"        console.log(\"📤 Backend sẽ tự động emit event friendRequest:received cho User B\");",
+									"    } else {",
+									"        console.error(\"❌ Error:\", jsonData.message);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userA_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"requesterId\": \"{{userA_userId}}\",\n    \"targetUserId\": \"{{target_user_id}}\",\n    \"message\": \"Hi, let's be friends!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/relationship/users/friend-requests/send",
+							"host": ["{{base_url}}"],
+							"path": ["relationship", "users", "friend-requests", "send"]
+						},
+						"description": "**Gửi friend request qua REST API** (Đơn giản hơn WebSocket)\n\nBackend sẽ tự động:\n1. Lưu friend request vào database\n2. Emit event `friendRequest:received` cho User B qua Socket.IO\n\n**User B sẽ nhận event realtime ngay lập tức!**"
+					}
+				}
+			]
+		},
+		{
+			"name": "Manual: Login User A",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    const jsonData = pm.response.json();",
+							"    if (jsonData.code === 1000 && jsonData.result) {",
+							"        pm.collectionVariables.set(\"userA_token\", jsonData.result.token);",
+							"        pm.collectionVariables.set(\"userA_userId\", jsonData.result.userId);",
+							"        console.log(\"✅ User A logged in:\", jsonData.result.userId);",
+							"        console.log(\"📋 Copy userId này và set vào 'target_user_id' trong User B collection:\", jsonData.result.userId);",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"{{userA_username}}\",\n    \"password\": \"{{userA_password}}\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/identity/auth/login",
+					"host": ["{{base_url}}"],
+					"path": ["identity", "auth", "login"]
+				}
+			}
+		},
+		{
+			"name": "✅ Send Friend Request (REST API - Khuyến nghị)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    const jsonData = pm.response.json();",
+							"    if (jsonData.code === 1000) {",
+							"        console.log(\"✅ Friend request sent successfully via REST API!\");",
+							"        console.log(\"📤 Backend sẽ tự động emit event friendRequest:received cho User B\");",
+							"    } else {",
+							"        console.error(\"❌ Error:\", jsonData.message);",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{userA_token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"requesterId\": \"{{userA_userId}}\",\n    \"targetUserId\": \"{{target_user_id}}\",\n    \"message\": \"Hi, let's be friends!\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/relationship/users/friend-requests/send",
+					"host": ["{{base_url}}"],
+					"path": ["relationship", "users", "friend-requests", "send"]
+				},
+				"description": "**Gửi friend request qua REST API** (Đơn giản hơn WebSocket)\n\nBackend sẽ tự động:\n1. Lưu friend request vào database\n2. Emit event `friendRequest:received` cho User B qua Socket.IO\n\n**User B sẽ nhận event realtime ngay lập tức!**"
+			}
+		},
+		{
+			"name": "Manual: Connect WebSocket (User A)",
+			"request": {
+				"protocolProfileBehavior": {
+					"disabledSystemHeaders": {}
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "ws://{{socketio_host}}:{{socketio_port}}/?userId={{userA_userId}}&token={{userA_token}}",
+					"protocol": "ws",
+					"host": ["{{socketio_host}}"],
+					"port": "{{socketio_port}}",
+					"query": [
+						{
+							"key": "userId",
+							"value": "{{userA_userId}}"
+						},
+						{
+							"key": "token",
+							"value": "{{userA_token}}"
+						}
+					]
+				},
+				"description": "⚠️ **Lưu ý:** Postman WebSocket có thể không hỗ trợ đầy đủ Socket.IO protocol.\n\n**Khuyến nghị:** Dùng request \"✅ Send Friend Request (REST API)\" thay vì WebSocket.\n\nNếu vẫn muốn test WebSocket, sau khi connect, emit event `friendRequest:send` với payload:\n```json\n{\n  \"targetUserId\": \"{{target_user_id}}\",\n  \"message\": \"Hi, let's be friends!\"\n}\n```"
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5000/v1",
+			"type": "string"
+		},
+		{
+			"key": "socketio_host",
+			"value": "localhost",
+			"type": "string"
+		},
+		{
+			"key": "socketio_port",
+			"value": "9092",
+			"type": "string"
+		},
+		{
+			"key": "userA_username",
+			"value": "test182@gmail.com",
+			"type": "string"
+		},
+		{
+			"key": "userA_password",
+			"value": "123456",
+			"type": "string"
+		},
+		{
+			"key": "target_user_id",
+			"value": "24643df8-a97c-49ca-b981-23a07099b9d9",
+			"description": "User B userId (nick thứ 2)",
+			"type": "string"
+		},
+		{
+			"key": "userA_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userA_userId",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
+

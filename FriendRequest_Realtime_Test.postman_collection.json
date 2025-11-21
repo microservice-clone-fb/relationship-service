@@ -1,0 +1,445 @@
+{
+	"info": {
+		"_postman_id": "friend-request-realtime-test",
+		"name": "Friend Request Realtime Test",
+		"description": "Test realtime friend request via Socket.IO + REST API\n\n**Setup:**\n1. Start identity-service (port 5001)\n2. Start relationship-service (port 5007 + Socket.IO 9092)\n3. Login để lấy token và userId\n4. Connect WebSocket với userId và token\n5. Emit friendRequest:send để test realtime\n\n**Events:**\n- friendRequest:send - Gửi lời mời kết bạn\n- friendRequest:cancel - Hủy lời mời\n- friendRequest:accept - Chấp nhận lời mời\n- friendRequest:reject - Từ chối lời mời\n- friendship:remove - Xóa bạn bè\n\n**Listen Events (server emit to client):**\n- friendRequest:received - Nhận lời mời\n- friendRequest:cancelled - Lời mời bị hủy\n- friendRequest:accepted - Lời mời được chấp nhận\n- friendRequest:rejected - Lời mời bị từ chối\n- friendship:removed - Bạn bè bị xóa",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Authentication",
+			"item": [
+				{
+					"name": "Login - User A (Requester)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.code === 1000 && jsonData.result) {",
+									"        pm.collectionVariables.set(\"userA_token\", jsonData.result.token);",
+									"        pm.collectionVariables.set(\"userA_userId\", jsonData.result.userId);",
+									"        console.log(\"✅ User A logged in:\", jsonData.result.userId);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"userA\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/identity/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["identity", "auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Login - User B (Target)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.code === 1000 && jsonData.result) {",
+									"        pm.collectionVariables.set(\"userB_token\", jsonData.result.token);",
+									"        pm.collectionVariables.set(\"userB_userId\", jsonData.result.userId);",
+									"        console.log(\"✅ User B logged in:\", jsonData.result.userId);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"userB\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/identity/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["identity", "auth", "login"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "2. REST API - Friend Requests",
+			"item": [
+				{
+					"name": "Get All Relationships (User A)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userA_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/relationship/users/all-relationship/{{userA_userId}}",
+							"host": ["{{base_url}}"],
+							"path": ["relationship", "users", "all-relationship", "{{userA_userId}}"]
+						}
+					}
+				},
+				{
+					"name": "Send Friend Request (REST)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userA_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"requesterId\": \"{{userA_userId}}\",\n    \"targetUserId\": \"{{userB_userId}}\",\n    \"message\": \"Hi, let's be friends!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/relationship/users/friend-requests/send",
+							"host": ["{{base_url}}"],
+							"path": ["relationship", "users", "friend-requests", "send"]
+						}
+					}
+				},
+				{
+					"name": "Cancel Friend Request (REST)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userA_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"requesterId\": \"{{userA_userId}}\",\n    \"targetUserId\": \"{{userB_userId}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/relationship/users/friend-requests/cancel",
+							"host": ["{{base_url}}"],
+							"path": ["relationship", "users", "friend-requests", "cancel"]
+						}
+					}
+				},
+				{
+					"name": "Accept Friend Request (REST)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userB_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"requesterId\": \"{{userA_userId}}\",\n    \"targetUserId\": \"{{userB_userId}}\",\n    \"decision\": \"ACCEPT\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/relationship/users/friend-requests/respond",
+							"host": ["{{base_url}}"],
+							"path": ["relationship", "users", "friend-requests", "respond"]
+						}
+					}
+				},
+				{
+					"name": "Reject Friend Request (REST)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userB_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"requesterId\": \"{{userA_userId}}\",\n    \"targetUserId\": \"{{userB_userId}}\",\n    \"decision\": \"REJECT\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/relationship/users/friend-requests/respond",
+							"host": ["{{base_url}}"],
+							"path": ["relationship", "users", "friend-requests", "respond"]
+						}
+					}
+				},
+				{
+					"name": "Unfriend (REST)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userA_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": \"{{userA_userId}}\",\n    \"friendId\": \"{{userB_userId}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/relationship/users/friendships/remove",
+							"host": ["{{base_url}}"],
+							"path": ["relationship", "users", "friendships", "remove"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "3. WebSocket - Realtime Events",
+			"item": [
+				{
+					"name": "Connect WebSocket - User B (Listen for incoming requests)",
+					"request": {
+						"protocolProfileBehavior": {
+							"disabledSystemHeaders": {}
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "ws://{{socketio_host}}:{{socketio_port}}/?userId={{userB_userId}}&token={{userB_token}}",
+							"protocol": "ws",
+							"host": ["{{socketio_host}}"],
+							"port": "{{socketio_port}}",
+							"query": [
+								{
+									"key": "userId",
+									"value": "{{userB_userId}}"
+								},
+								{
+									"key": "token",
+									"value": "{{userB_token}}"
+								}
+							]
+						},
+						"description": "Connect WebSocket để User B listen các event realtime:\n- friendRequest:received\n- friendRequest:cancelled\n- friendRequest:accepted\n- friendRequest:rejected\n- friendship:removed\n\n**Lưu ý:** Postman WebSocket cần version 10.0+"
+					}
+				},
+				{
+					"name": "Emit: friendRequest:send (User A → User B)",
+					"request": {
+						"protocolProfileBehavior": {
+							"disabledSystemHeaders": {}
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "ws://{{socketio_host}}:{{socketio_port}}/?userId={{userA_userId}}&token={{userA_token}}",
+							"protocol": "ws",
+							"host": ["{{socketio_host}}"],
+							"port": "{{socketio_port}}",
+							"query": [
+								{
+									"key": "userId",
+									"value": "{{userA_userId}}"
+								},
+								{
+									"key": "token",
+									"value": "{{userA_token}}"
+								}
+							]
+						},
+						"description": "**Sau khi connect, emit event:**\n```json\n{\n  \"event\": \"friendRequest:send\",\n  \"data\": {\n    \"targetUserId\": \"{{userB_userId}}\",\n    \"message\": \"Hi, let's be friends!\"\n  }\n}\n```\n\n**Expected ACK Response:**\n```json\n{\n  \"success\": true,\n  \"message\": \"Friend request sent successfully\",\n  \"code\": 1000\n}\n```\n\n**User B sẽ nhận event:** `friendRequest:received`"
+					}
+				},
+				{
+					"name": "Emit: friendRequest:cancel (User A)",
+					"request": {
+						"protocolProfileBehavior": {
+							"disabledSystemHeaders": {}
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "ws://{{socketio_host}}:{{socketio_port}}/?userId={{userA_userId}}&token={{userA_token}}",
+							"protocol": "ws",
+							"host": ["{{socketio_host}}"],
+							"port": "{{socketio_port}}",
+							"query": [
+								{
+									"key": "userId",
+									"value": "{{userA_userId}}"
+								},
+								{
+									"key": "token",
+									"value": "{{userA_token}}"
+								}
+							]
+						},
+						"description": "**Emit event:**\n```json\n{\n  \"event\": \"friendRequest:cancel\",\n  \"data\": {\n    \"targetUserId\": \"{{userB_userId}}\"\n  }\n}\n```\n\n**User B sẽ nhận event:** `friendRequest:cancelled`"
+					}
+				},
+				{
+					"name": "Emit: friendRequest:accept (User B)",
+					"request": {
+						"protocolProfileBehavior": {
+							"disabledSystemHeaders": {}
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "ws://{{socketio_host}}:{{socketio_port}}/?userId={{userB_userId}}&token={{userB_token}}",
+							"protocol": "ws",
+							"host": ["{{socketio_host}}"],
+							"port": "{{socketio_port}}",
+							"query": [
+								{
+									"key": "userId",
+									"value": "{{userB_userId}}"
+								},
+								{
+									"key": "token",
+									"value": "{{userB_token}}"
+								}
+							]
+						},
+						"description": "**Emit event:**\n```json\n{\n  \"event\": \"friendRequest:accept\",\n  \"data\": {\n    \"requesterId\": \"{{userA_userId}}\"\n  }\n}\n```\n\n**Cả User A và User B sẽ nhận event:** `friendRequest:accepted`"
+					}
+				},
+				{
+					"name": "Emit: friendRequest:reject (User B)",
+					"request": {
+						"protocolProfileBehavior": {
+							"disabledSystemHeaders": {}
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "ws://{{socketio_host}}:{{socketio_port}}/?userId={{userB_userId}}&token={{userB_token}}",
+							"protocol": "ws",
+							"host": ["{{socketio_host}}"],
+							"port": "{{socketio_port}}",
+							"query": [
+								{
+									"key": "userId",
+									"value": "{{userB_userId}}"
+								},
+								{
+									"key": "token",
+									"value": "{{userB_token}}"
+								}
+							]
+						},
+						"description": "**Emit event:**\n```json\n{\n  \"event\": \"friendRequest:reject\",\n  \"data\": {\n    \"requesterId\": \"{{userA_userId}}\"\n  }\n}\n```\n\n**User A sẽ nhận event:** `friendRequest:rejected`"
+					}
+				},
+				{
+					"name": "Emit: friendship:remove (User A)",
+					"request": {
+						"protocolProfileBehavior": {
+							"disabledSystemHeaders": {}
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "ws://{{socketio_host}}:{{socketio_port}}/?userId={{userA_userId}}&token={{userA_token}}",
+							"protocol": "ws",
+							"host": ["{{socketio_host}}"],
+							"port": "{{socketio_port}}",
+							"query": [
+								{
+									"key": "userId",
+									"value": "{{userA_userId}}"
+								},
+								{
+									"key": "token",
+									"value": "{{userA_token}}"
+								}
+							]
+						},
+						"description": "**Emit event:**\n```json\n{\n  \"event\": \"friendship:remove\",\n  \"data\": {\n    \"friendId\": \"{{userB_userId}}\"\n  }\n}\n```\n\n**User B sẽ nhận event:** `friendship:removed`"
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5000/v1",
+			"type": "string"
+		},
+		{
+			"key": "socketio_host",
+			"value": "localhost",
+			"type": "string"
+		},
+		{
+			"key": "socketio_port",
+			"value": "9092",
+			"type": "string"
+		},
+		{
+			"key": "userA_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userA_userId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userB_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userB_userId",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
+

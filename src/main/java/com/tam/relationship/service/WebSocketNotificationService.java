@@ -20,7 +20,9 @@ public class WebSocketNotificationService {
      * Emit friend request sent event to target user
      */
     public void notifyFriendRequestSent(String targetUserId, String requesterId, String requesterName) {
-        log.info("📤 [WebSocket] Emitting friendRequest:sent to user: {}", targetUserId);
+        log.info("📤 [WebSocket] Emitting friendRequest:received to target user: {}", targetUserId);
+        log.info("📤 [WebSocket] Requester ID: {}", requesterId);
+
         FriendRequestNotification notification = FriendRequestNotification.builder()
                 .type("FRIEND_REQUEST_SENT")
                 .requesterId(requesterId)
@@ -28,8 +30,10 @@ public class WebSocketNotificationService {
                 .targetUserId(targetUserId)
                 .build();
 
-        // Emit to specific user via Socket.IO
+        // Emit to specific user via Socket.IO - NGAY LẬP TỨC
         socketIOService.emitToUser(targetUserId, "friendRequest:received", notification);
+
+        log.info("✅ [WebSocket] Event friendRequest:received emitted to user: {}", targetUserId);
     }
 
     /**
